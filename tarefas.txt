@@ -1,0 +1,2 @@
+Estudar java    ; false
+Academia   ; false
