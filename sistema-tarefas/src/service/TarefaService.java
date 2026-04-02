@@ -106,7 +106,7 @@ public class TarefaService {
             System.out.println("Tarefa removida com sucesso!");
 
         } else {
-            System.out.println("Í´ndice inválido!");
+            System.out.println("Índice inválido!");
         }
     }
 }
