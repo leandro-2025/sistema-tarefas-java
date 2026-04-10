@@ -1,112 +1,153 @@
 package service;
 
 import model.Tarefa;
-
-import java.util.ArrayList;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.sql.SQLException;
+import java.sql.ResultSet;
 
 public class TarefaService {
 
-    private ArrayList<Tarefa> tarefas = new ArrayList<>();
+    public void criarTabela() {
+
+        String sql = "CREATE TABLE IF NOT EXISTS tarefas (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "descricao TEXT NOT NULL," +
+                "concluida BOOLEAN NOT NULL" +
+                ");";
+
+        try (Connection conn = Conexao.conectar();
+             Statement stmt = conn.createStatement()) {
+
+            stmt.execute(sql);
+            System.out.println("Tabela criada/verificada!");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void adicionarTarefa(Tarefa tarefa) {
 
-        tarefas.add(tarefa);
-        salvarEmArquivo();
-        System.out.println("Tarefa adicionada com sucesso!");
+        String sql = "INSERT INTO tarefas (descricao, concluida) VALUES (?, ?)";
+
+        try (Connection conn = Conexao.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, tarefa.getDescricao());
+            stmt.setBoolean(2, tarefa.isConcluida());
+
+            stmt.executeUpdate();
+
+            System.out.println("✔ Tarefa adicionada com sucesso!");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void listarTarefas() {
 
-        if (tarefas.isEmpty()) {
-            System.out.println("Nenhuma tarefa cadastrada!");
-        } else {
+        String sql = "SELECT * FROM tarefas ORDER BY id";
+
+        try (Connection conn = Conexao.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
             System.out.println("----- LISTA DE TAREFAS -----");
 
-            int i = 1;
+            int total = 0;
+            int concluidas = 0;
+            int pendentes = 0;
 
-            for (Tarefa t : tarefas) {
+            while (rs.next()) {
 
-                String status = t.isConcluida() ? "[✔]" : "[ ]";
+                int id = rs.getInt("id");
+                String descricao = rs.getString("descricao");
 
-                System.out.println(i + " | " + status + " | " + t.getDescricao());
-                i++;
-             }
-        }
-    }
+                int concluidaInt = rs.getInt("concluida");
+                boolean concluida = (concluidaInt == 1);
 
-    public void salvarEmArquivo() {
+                String status = concluida ? "[✔]" : "[ ]";
 
-        try {
+                System.out.println(id + " | " + status + " | " + descricao);
+                total++;
 
-            FileWriter writer = new FileWriter("tarefas.txt");
-
-            for (Tarefa t : tarefas) {
-
-                writer.write(t.getDescricao() + " ; " + t.isConcluida() + "\n");
+                if (concluida) {
+                    concluidas++;
+                } else {
+                    pendentes++;
+                }
             }
 
-            writer.close();
+            System.out.println("---------------------");
+            System.out.println("Total: " + total);
+            System.out.println("Concluídas: " + concluidas);
+            System.out.println("Pendentes: " + pendentes);
 
-        } catch (IOException e) {
-            System.out.println("Erro ao salvar arquivo!");
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
-    public void carregarDoArquivo() {
+    public void concluirTarefa(int id) {
 
-        try {
+        String sql = "UPDATE tarefas SET concluida = 1 WHERE id = ?";
 
-            BufferedReader reader = new BufferedReader(new FileReader("tarefas.txt"));
+        try (Connection conn = Conexao.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            String linha;
+            stmt.setInt(1, id);
 
-            while ((linha= reader.readLine()) != null) {
+            int linhas = stmt.executeUpdate();
 
-                String[] partes = linha.split(";");
-
-                Tarefa tarefa = new Tarefa();
-                tarefa.setDescricao(partes[0]);
-                tarefa.setConcluida(Boolean.parseBoolean(partes[1]));
-
-                tarefas.add(tarefa);
+            if (linhas > 0) {
+                System.out.println("✔ Tarefa concluída com sucesso!");
+            } else {
+                System.out.println("❌ Tarefa não encontrada!");
             }
-            reader.close();
-
-        } catch (IOException e) {
-            System.out.println("Arquivo não encontrado, iniciando vazio.");
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
-    public void concluirTarefa(int indice) {
+    public void editarTarefa(int id, String edt) {
+        String sql = "UPDATE tarefas SET descricao = ? WHERE id = ?";
 
-        if (indice >= 0 && indice < tarefas.size()) {
+        try (Connection conn = Conexao.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            tarefas.get(indice).setConcluida(true);
-            salvarEmArquivo();
+            stmt.setString(1,edt);
+            stmt.setInt(2,id);
 
-            System.out.println("Tarefa concluída com sucesso!");
+            int linhas = stmt.executeUpdate();
 
-        } else {
-            System.out.println("Índice inválido!");
+            if (linhas > 0) {
+                System.out.println("✔ Tarefa editada com sucesso!");
+            } else {
+                System.out.println("❌ Tarefa não encontrada!");
+            }
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
-    public void removerTarefa(int indice) {
+    public void removerTarefa(int id) {
 
-        if (indice >= 0 && indice < tarefas.size()) {
+        String sql = "DELETE FROM tarefas WHERE id = ? ";
 
-            tarefas.remove(indice);
-            salvarEmArquivo();
+        try (Connection conn = Conexao.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            System.out.println("Tarefa removida com sucesso!");
-
-        } else {
-            System.out.println("Índice inválido!");
+            stmt.setInt(1, id);
         }
+
+
+
+
     }
+
 }

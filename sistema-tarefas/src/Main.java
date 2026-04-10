@@ -9,19 +9,20 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
         TarefaService service = new TarefaService();
-        service.carregarDoArquivo();
+        service.criarTabela();
 
         int opcao = 0;
 
-        while (opcao != 5) {
+        while (opcao != 6) {
 
             System.out.println("\n----- MENU -----");
             System.out.println("1 - Adicionar tarefa");
             System.out.println("2 - Listar tarefas");
             System.out.println("3 - Concluir tarefas");
-            System.out.println("4 - Remover tarefa");
-            System.out.println("5 - Sair");
-            System.out.println("Escolha: ");
+            System.out.println("4 - Editar tarefas");
+            System.out.println("5 - Remover tarefa");
+            System.out.println("6 - Sair");
+            System.out.print("Escolha: ");
 
             if (scanner.hasNextInt()) {
                 opcao = scanner.nextInt();
@@ -55,23 +56,36 @@ public class Main {
 
                 case 3:
 
-                    System.out.println("Digite o número da tarefa: ");
-                    int numero = scanner.nextInt();
+                    System.out.println("Digite o ID da tarefa: ");
+                    int id = scanner.nextInt();
 
-                    service.concluirTarefa(numero - 1);
+                    service.concluirTarefa(id);
 
                     break;
 
                 case 4:
 
-                    System.out.println("Digite o número da tarefa para remover: ");
-                    int remover = scanner.nextInt();
+                    System.out.println("Digite o ID da tarefa que deseja editar: ");
+                    int idE = scanner.nextInt();
+                    scanner.nextLine();
 
-                    service.removerTarefa(remover - 1);
+                    System.out.println("Digite a nova descrição: ");
+                    String edt = scanner.nextLine();
+
+                    service.editarTarefa(idE, edt);
 
                     break;
 
                 case 5:
+
+                    System.out.println("Digite o ID da tarefa para remover: ");
+                    int idR = scanner.nextInt();
+
+                    service.removerTarefa(idR);
+
+                    break;
+
+                case 6:
 
                     System.out.println("Saindo...");
                     break;
